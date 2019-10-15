@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <link rel="stylesheet" href="style.css">
+        <title>
+            {{ name }}
+        </title>
+        <style type="text/css">
+            html,body,div,form,input,span,a{
+                padding: 0px;
+                margin: 0px;
+            }
+            body{
+                background-image: url("/static/images/timg.jpeg");
+                background-attachment: fixed;
+            }
+            table{
+                width: 1000px;
+                margin-left: 20px;
+                background-color: aquamarine;
+            }
+
+            #main{
+                background-image: url('/static/images/choose.png');
+                width: 1400px;
+                height: 800px;
+            }
+            #top{
+                height: 50px;
+                font-size: 24px;
+                color: white;
+                text-align: center;
+                line-height: 50px;
+            }
+            #left{
+                width: 280px;
+                float: left;
+            }
+            #function{
+                margin-top: 5px;
+                margin-right: 10px;
+                margin-left: 20px;
+                background-color: white;
+                width: 260px;
+                height: 590px;
+            }
+            #funcid{
+                margin-left: 20px;
+            }
+            #container{
+                background-color: white;
+                margin: 20px 20px;
+                float: left;
+            }
+        </style>
+        <script type="text/javascript">
+            window.onload = function(){
+                var box_width;
+                var window_width;
+                var con=document.getElementById("main")
+                box_width = con.offsetWidth;
+                window_width = window.innerWidth;
+                if(box_width < window_width)
+                {
+                    con.style.marginTop = "20px";
+                    con.style.marginLeft = (window_width - box_width)/2 + "px";
+                }
+                else
+                {
+                    con.style.marginTop = "20px";
+                    con.style.marginLeft = "30px";
+                }
+            }
+            window.onresize = function(){
+                var box_width;
+                var window_width;
+                var con=document.getElementById("main")
+                box_width = con.offsetWidth;
+                window_width = window.innerWidth;
+                if(box_width < window_width)
+                {
+                    con.style.marginTop = "20px";
+                    con.style.marginLeft = (window_width - box_width)/2 + "px";
+                }
+                else
+                {
+                    con.style.marginTop = "20px";
+                    con.style.marginLeft = "30px";
+                }
+            }
+        </script>
+    </head>
+    <body>
+        <div id="main">
+            <div id="top">
+                <p> {{ top_name }} </p>
+            </div>
+            <div id="left">
+                {{ choose_leftpage }}
+                <div id="function">
+                    {{ function_page }}
+                </div>
+            </div>
+            <div id="container">
+                {{ container_page }}
+            </div>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FUNCTIONLIST title="远程调试器支持的功能">
+  <FUNCTION id="1" title="K35A钥匙管理机远程调试" addr="127.0.0.1" port="20001" ></FUNCTION>
+  <FUNCTION id="2" title="K35B钥匙管理机远程调试" addr="127.0.0.1" port="20001" ></FUNCTION>
+  <FUNCTION id="3" title="K35C钥匙管理机远程调试" addr="127.0.0.1" port="20001" ></FUNCTION>
+</FUNCTIONLIST>

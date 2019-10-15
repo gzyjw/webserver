@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}
+    welcome to gzyjw test program
+{% endblock %}
+{% block head %}
+    {{ super() }}
+    <style type="text/css">
+        .important {color: brown;}
+    </style>
+{% endblock %}
+{% block topbar %}
+    <h1>welcome to my debug client</h1>
+{% endblock %}
+{% block content %}
+    <p class="important">
+        it's just for test
+    </p>
+{% endblock %}
+{% block footer %}
+    <p>
+        end of document!!
+    </p>
+{% endblock %}

@@ -1,0 +1,130 @@
+# _*_ coding: utf-8 _*_
+'''
+from flask import Flask, url_for, request
+from jinja2 import Environment, PackageLoader
+from static.python import globaldata
+from static.python import dbconnect
+import xmlrpc.client
+import sys
+
+from xml.etree import ElementTree as ET
+'''
+#app = Flask(__name__)
+'''
+envdata = globaldata.globel()
+envdata.function = 0
+envdata.server = ''
+envdata.port = 80
+envdata.databasename = ''
+envdata.function_name = ''
+envdata.programentry = ''
+envdata.userlist = []
+'''
+'''
+def initial():
+    str_xml = open("static/config/user.xml", 'r').read()
+    root = ET.XML(str_xml)
+    for user in root:
+        envdata.append(user.attrib)
+    print(envdata.userlist)
+
+@app.route('/')
+def hello_world():
+    env = Environment(loader=PackageLoader('webserver', 'templates'))
+    template = env.get_template('login.html')
+    #template.render()
+    #env = Environment()
+    #template = env.from_string('Hello {{ name }}')
+    #return template.render(name = 'Xiaoming')
+    return template.render(name = '登录用户', backgroud_pic = url_for('static', filename = 'images/timg.jpeg'), login_pic = url_for('static', filename = 'images/login.png'))
+    #return '<h1> hello the world </h1>'
+
+@app.route('/login/<html>', methods=['POST', 'GET'])
+def admin_login(html):
+  userid = request.values['userid']
+  password = request.values['password']
+  envdata.user = userid
+  envdata.password = password
+  with dbconnect.DB(db='gzyjw_db') as db:
+        sql = "SELECT * FROM admin_user WHERE userid = '%s'" % userid
+        db.execute(sql)
+        result = db.fetchall()
+        for name in result:
+            if name['password'] == password:
+                sql = "SELECT * FROM function_choose "
+                db.execute(sql)
+                result = db.fetchall()
+                tempstr = '<p>功能选择：</p><ul>'
+                for name in result:
+                    str = '<li><a href="/choose.html?function=%s">%s</a></li>' % (name['idfunction_choose'], name['function_name'])
+                    tempstr += str
+        tempstr += '</ul>'
+  env = Environment(loader=PackageLoader('webserver', 'templates'))
+  template = env.get_template('choose.html')
+  return template.render(top_name = '选择相应的功能',\
+                                       name = '选择相应组件' ,\
+                                       backgroud_pic = url_for('static',\
+                                       filename = 'images/timg.jpeg'), \
+                                       choose_leftpage = tempstr)
+
+
+@app.route('/choose.html', methods=['GET', 'POST'])
+def choose_html():
+    with dbconnect.DB(db='gzyjw_db') as db:
+        envdata.function = request.values['function']
+        sql = "SELECT * FROM function_choose WHERE idfunction_choose = %s"% envdata.function
+        db.execute(sql)
+        result = db.fetchall()
+        recordset = result[0]
+        envdata.function = recordset['idfunction_choose']
+        envdata.function_name = recordset['function_name']
+        envdata.server = recordset['function_server_addr']
+        envdata.port = recordset['function_server_port']
+        envdata.programentry = recordset['function_program_entry']
+    rpcserver = "http://%s:%s" % (envdata.server, envdata.port)
+    server = xmlrpc.client.ServerProxy(rpcserver)
+    try:
+        returnstr = server.setup(envdata.function, envdata.function_name)
+        return returnstr
+    except xmlrpc.client.Error as v:
+        return("ERROR", v)
+
+@app.route('/running/<html>' ,methods=['GET', 'POST'])
+def running_html(html):
+    if html == "initial.html":
+        rpcserver = "http://%s:%s" % (envdata.server, envdata.port)
+        server = xmlrpc.client.ServerProxy(rpcserver)
+        try:
+            tempdict = dict()
+            for value in request.values:
+                tempdict.update({value: request.values[value]})
+            returnstr = server.initial(tempdict)
+            return returnstr
+        except xmlrpc.client.Error as v:
+            return("ERROR", v)
+    elif html == "function.html":
+        rpcserver = "http://%s:%s" % (envdata.server, envdata.port)
+        server = xmlrpc.client.ServerProxy(rpcserver)
+        try:
+            tempdict = dict()
+            for value in request.values:
+                tempdict.update({value: request.values[value]})
+            returnstr = server.function(tempdict)
+            return returnstr
+        except xmlrpc.client.Error as v:
+            return("ERROR", v)
+    else:
+        return '<h1> hello the default </h1>'
+
+def test():
+    str_xml = open('static/config/user.xml', 'r').read()
+    root = ET.XML(str_xml)
+    userlist=[]
+    for user in root:
+        userlist.append(user.attrib)
+    print(userlist)
+
+if __name__ == '__main__':
+    test()
+    #app.run(port = 3011)
+'''

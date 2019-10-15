@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<EXISTUSER title="远程调试器支持的用户">
+  <USER id="1" name="gzyjw" password="700829"></USER>
+  <USER id="2" name="test" password="111111"></USER>
+  <USER id="3" name="admin" password="111111"></USER>
+</EXISTUSER>
