@@ -28,6 +28,7 @@ envdata.currentmechinedict = dict()
 envdata.receive_proclist = []           #接收到的命令系列
 envdata.pre_commandlist = []            #分解成功的待处理命令系列
 envdata.running_commandlist = []        #正在处理的命令系列
+envdata.waitresult_list = []            #等待返回结果系列
 
 envdata.databaselist = []       #支持的数据库服务器列表
 envdata.proctollist = []        #支持的协议服务器列表
