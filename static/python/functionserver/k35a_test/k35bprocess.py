@@ -47,6 +47,23 @@ cmddirectdict = {
    CMDDIR_REQUEST:"CMDDIR_REQUEST"
 }
 
+def getserver(parameter):
+    envdata.database = int(parameter.get('databaselist'))
+    envdata.proctol = int(parameter.get('proctollist'))
+    for database in envdata.databaselist:
+        if database.get("id") == parameter.get('databaselist'):
+            envdata.databasename = database.get("name")
+            envdata.databasecommit = database.get("commit")
+            envdata.databaseserverinfo = (database.get("server"), int(database.get("port")))
+            rpcserver = "http://%s:%s" % envdata.databaseserverinfo
+            envdata.databaseserver = xmlrpc.client.ServerProxy(rpcserver)
+    for proctol in envdata.proctollist:
+        if proctol.get("id") == parameter.get('proctollist'):
+            envdata.proctolname = proctol.get("name")
+            envdata.proctolserverinfo = (proctol.get("server"), int(proctol.get("port")))
+            rpcserver = "http://%s:%s" % envdata.proctolserverinfo
+            envdata.proctolserver = xmlrpc.client.ServerProxy(rpcserver)
+
 def proc_loginon(parameter):
     dataparmeter = dict(cmd="FUNC_LOGIN", machineid=parameter.get("machineid"))
     try:
@@ -125,7 +142,10 @@ def currentmechinebase():
     template = env.get_template('running.html')
     return [template, tempcontainer, tempfuncstr, templeftstr]
 
+
+
 def proc_sendtimeto_machine(parameter):
+    getserver(parameter)
     res = ''
     if parameter.__contains__('MachineEquId'):
         machineid = parameter.get('MachineEquId')
@@ -501,7 +521,7 @@ def begin(dict_data):
     dataparmeter = dict(cmd="FUNC_GETMECHINEINFO", machineid=dict_data["machineid"])
     try:
         machinelist = envdata.databaseserver.databaseproc(dataparmeter)
-        dict_data["machineinfo"] = machinelist
+        dict_data["MachineEquId"] = machinelist["MachineEquId"]
     except (xmlrpc.client.Error, ConnectionRefusedError) as v:
         tempfuncstr = "error no database has!!!"
     templist.append({"cmd_name":"CMD_LOGINON", "cmd_commit":"注册"})
