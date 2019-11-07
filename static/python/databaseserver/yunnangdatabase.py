@@ -48,7 +48,7 @@ def proc_get_allmachine(parameter):
 def proc_getmechineinfo(parameter):
     deviceid=parameter.get('machineid')
     with dbconnect.DB(db = envdata.dbname) as db:
-        sql = 'select * from KMBSDB.kma_keymachine where MachineEquId="%s"'%deviceid
+        sql = 'select * from KMBSDB.kma_keymachine where MachineId="%s"'%deviceid
         db.execute(sql)
         result = db.fetchall()
         for recode in result:

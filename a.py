@@ -1,7 +1,7 @@
 from xml.etree import ElementTree as ET
 import threading
 import xmlrpc.client
-
+import time
 def test():
     str_xml = open("static/config/user.xml", 'r').read()
     root = ET.XML(str_xml)
@@ -18,5 +18,10 @@ def timerfunc():
     t = threading.Timer(1, timerfunc)
     t.start()
 
+def timef():
+    print(time.time())
+    t = threading.Timer(0.1, timef)
+    t.start()
+
 if __name__ == "__main__":
-    timerfunc()
+    timef()

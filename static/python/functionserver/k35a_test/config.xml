@@ -6,9 +6,9 @@
         <DATABASE id="3" name="KMBSDB" commit="临时用智能钥匙管理机数据库" server="127.0.0.1" port="40001" ></DATABASE>
     </DATABASELIST>
     <PROCTOLLIST>
-        <PROCTOL id="1" name="E40 E钥通主站与子站通讯规约" server="127.0.0.1" port="30001" ></PROCTOL>
-        <PROCTOL id="2" name="CAN F钥通主站与子站通讯规约" server="127.0.0.1" port="30001" ></PROCTOL>
-        <PROCTOL id="3" name="TCP T钥通主站与子站通讯规约" server="127.0.0.1" port="30001" ></PROCTOL>
-        <PROCTOL id="4" name="UDP U钥通主站与子站通讯规约" server="127.0.0.1" port="30001" ></PROCTOL>
+        <PROCTOL id="1" name="E40 E钥通主站与子站通讯规约" commit="E40 E钥通主站与子站通讯规约" server="127.0.0.1" port="30001" ></PROCTOL>
+        <PROCTOL id="2" name="CAN F钥通主站与子站通讯规约" commit="CAN F钥通主站与子站通讯规约" server="127.0.0.1" port="30001" ></PROCTOL>
+        <PROCTOL id="3" name="TCP T钥通主站与子站通讯规约" commit="TCP T钥通主站与子站通讯规约" server="127.0.0.1" port="30001" ></PROCTOL>
+        <PROCTOL id="4" name="UDP U钥通主站与子站通讯规约" commit="UDP U钥通主站与子站通讯规约" server="127.0.0.1" port="30001" ></PROCTOL>
     </PROCTOLLIST>
 </FUNCTION>

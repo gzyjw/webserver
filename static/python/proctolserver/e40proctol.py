@@ -14,7 +14,7 @@ envdata = globaldata.globel()
 
 
 
-TCP_PORT = 10004
+TCP_PORT = 10003
 BUFSIZE = 4096
 
 SEVER_NAME = ('127.0.0.1', 30001)
@@ -416,6 +416,39 @@ def proc_open_mechine(parameter):
     else:
         return 'ERROR'
 
+def proc_unlock_allkey(parameter):
+    if parameter.__contains__('machineid'):
+        machineid = parameter.get('machineid')
+        deviceid = onlinekeymachine[machineid].get('address')
+        tempdata = [0x00, 0x02, 0x05, 0x40, \
+                                0x00, 0x00, deviceid, 0x00, 0x6E, 0x6E, 0x00, 0x11]
+        tempcrc = calculate_crc(tempdata)
+        tempdata = E40FRAMEHEAD + tempdata + [(tempcrc & 0xFF), ((tempcrc >> 8) & 0xFF)]
+        try:
+            responce = onlinekeymachine.get(machineid).get('socket')
+            responce.send(bytes(tempdata))
+            return 'SUCCESS'
+        except IOError as v:
+            return 'LINKERROR'
+    else:
+        return 'ERROR'
+
+def proc_break_heart(parameter):
+    if parameter.__contains__('machineid'):
+        machineid = parameter.get('machineid')
+        deviceid = onlinekeymachine[machineid].get('address')
+        tempdata = [0x00, 0x02, 0x05, 0x40, \
+                                0x00, 0x00, deviceid, 0x00, 0x6E, 0x6E, 0x00, 0x01]
+        tempcrc = calculate_crc(tempdata)
+        tempdata = E40FRAMEHEAD + tempdata + [(tempcrc & 0xFF), ((tempcrc >> 8) & 0xFF)]
+        try:
+            responce = onlinekeymachine.get(machineid).get('socket')
+            responce.send(bytes(tempdata))
+            return 'SUCCESS'
+        except IOError as v:
+            return 'LINKERROR'
+    else:
+        return 'ERROR'
 
 def proc_commandmax(parameter):
     return parameter
@@ -425,6 +458,8 @@ commandentry = dict(REQUEST_LOGINON=proc_request_loginon,\
                     RESET_MACHINE=proc_reset_machine,\
                     SEND_TIME=proc_send_time,\
                     OPEN_MECHINE=proc_open_mechine,\
+                    UNLOCK_ALLKEY=proc_unlock_allkey,\
+                    BREAK_HEART=proc_break_heart,\
                     COMMANDMAX=proc_commandmax)
 
 def download_from_control(data):
@@ -444,7 +479,7 @@ def download_from_control(data):
 def upload_to_control():
     tempdata = list()
     for item in upload_pool:
-        item.update(dict())
+        #item.update(dict())
         print(item, type(item))
         tempdata.append(item)
     upload_pool.clear()

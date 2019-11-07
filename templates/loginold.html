@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <link rel="stylesheet" href="style.css">
+        <title>
+            {{ name }}
+        </title>
+        <style type="text/css">
+            body{
+                background-image: url({{ backgroud_pic }});
+            }
+            #content{
+                background-image: url({{ login_pic }});
+                width: 640px;
+                height: 480px;
+            }
+            #footbar{
+                padding-top: 260px;
+                margin-left: 120px;
+            }
+            td{
+                height: 56px;
+            }
+
+            #label{
+                width: 100px;
+                font-size: 20px;
+            }
+            #submit{
+                width: 120px;
+                height: 35px;
+                font-size: 20px;
+                margin-left: 140px;
+            }
+            #input{
+                width: 250px;
+                font-size: 20px;
+                height: 38px;
+            }
+        </style>
+        <script type="text/javascript">
+            window.onload = function(){
+                var box_width;
+                var box_height;
+                var window_width;
+                var window_height;
+                var con=document.getElementById("content")
+                box_width = con.offsetWidth;
+                window_width = window.innerWidth;
+                box_height = con.offsetHeight;
+                window_height = window.innerHeight;
+                if(box_width < window_width)
+                {
+                    con.style.marginLeft = (window_width - box_width)/2 + "px";
+                }
+                else
+                {
+                    con.style.marginLeft = "30px";
+                }
+                if(box_height < window_height)
+                {
+                    con.style.marginTop = (window_height - box_height)/2 + "px";
+                }
+                else
+                {
+                    con.style.marginTop = "30px";
+                }
+            }
+            window.onresize = function(){
+                var box_width;
+                var box_height;
+                var window_width;
+                var window_height;
+                var con=document.getElementById("content")
+                box_width = con.offsetWidth;
+                window_width = window.innerWidth;
+                box_height = con.offsetHeight;
+                window_height = window.innerHeight;
+                if(box_width < window_width)
+                {
+                    con.style.marginLeft = (window_width - box_width)/2 + "px";
+                }
+                else
+                {
+                    con.style.marginLeft = "30px";
+                }
+                if(box_height < window_height)
+                {
+                    con.style.marginTop = (window_height - box_height)/2 + "px";
+                }
+                else
+                {
+                    con.style.marginTop = "30px";
+                }
+            }
+        </script>
+    </head>
+    <body>
+        <div id="content">
+            <div id="footbar">
+                <form action="/login/administor.htm" method="post">
+                    <table>
+                        <tr>
+                            <td id="label">用户名:</td>
+                            <td><input id="input" type="text" name="userid" ></td>
+                        </tr>
+                        <tr>
+                            <td id="label">密码:</td>
+                            <td><input id="input" type="password" name="password" ></td>
+                        </tr>
+                        <tr>
+                            <td>
+                            </td>
+                            <td>
+                                <input id="submit" type="submit" value="进入">
+                            </td>
+                        </tr>
+                    </table>
+                </form>
+            </div>
+        </div>
+    </body>
+</html>
