@@ -137,15 +137,19 @@ def begin_html():
     server = xmlrpc.client.ServerProxy(rpcserver)
     try:
         returndict = server.begin(tempdict)
-        returnstr = beginviewentry[returndict["functionName"]](returndict)
+        returndict = beginviewentry[returndict["functionName"]](returndict)
         env = Environment(loader=PackageLoader('webserver', 'templates'))
         template = env.get_template('running.html')
         return template.render(top_name = '选择相应功能',\
                                name = '选择相应设备' ,\
-                               run_contentpage = returnstr,
-                               run_botpage = '')
+                               run_contentpage = returndict[0],\
+                               run_botpage = returndict[1],\
+                               scriptstrhead = returndict[2],\
+                               scriptstrbody = returndict[3])
     except xmlrpc.client.Error as v:
         return("ERROR", v)
+
+runnningviewentry = {"k35aremotedebug":k35aview.runningview}
 
 @app.route('/running.html' ,methods=['GET', 'POST'])
 def running_html():
@@ -155,11 +159,34 @@ def running_html():
     rpcserver = "http://%s:%s" % (tempdict["functionServer"], tempdict["functionPort"])
     server = xmlrpc.client.ServerProxy(rpcserver)
     try:
-        returnstr = server.function(tempdict)
+        returndict = server.function(tempdict)
+        returndict = runnningviewentry[returndict["functionName"]](returndict)
+        env = Environment(loader=PackageLoader('webserver', 'templates'))
+        template = env.get_template('running.html')
+        return template.render(top_name = '选择相应功能',\
+                               name = '选择相应设备' ,\
+                               run_contentpage = returndict[0],\
+                               run_botpage = returndict[1],\
+                               scriptstrhead = returndict[2],\
+                               scriptstrbody = returndict[3])
+    except xmlrpc.client.Error as v:
+        return("ERROR", v)
+
+@app.route('/getstatus.html' ,methods=['GET', 'POST'])
+def getstatus_html():
+    tempdict = dict()
+    for k,v in request.values.items():
+        tempdict[k] = v
+    rpcserver = "http://%s:%s" % (tempdict["functionServer"], tempdict["functionPort"])
+    server = xmlrpc.client.ServerProxy(rpcserver)
+    try:
+        returndict = server.function(tempdict)
+        returnstr = beginviewentry[returndict["functionName"]](returndict)
         return returnstr
         #return "<h1>钥匙管理机不在线</h1>"
     except xmlrpc.client.Error as v:
         return("ERROR", v)
+
 
 def test():
     str_xml = open('static/config/function.xml', 'r').read()

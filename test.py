@@ -1,11 +1,12 @@
-import streamlit as st
-import pandas as pd
+from bokeh.io import output_notebook, output_file, show
+from bokeh.plotting import figure
+import numpy as np
+ 
+p = figure(plot_width=800, plot_height=800)
+# 方框
+p.square(np.random.randint(1,10,5), np.random.randint(1,10,5), size=20, color="navy")
 
+# 圆形
+p.circle(np.random.randint(1,10,5), np.random.randint(1,10,5), size=10, color="green")
 
-# Reuse this data across runs!
-read_and_cache_csv = st.cache(pd.read_csv)
-
-BUCKET = "https://streamlit-self-driving.s3-us-west-2.amazonaws.com/"
-data = read_and_cache_csv(BUCKET + "labels.csv.gz", nrows=1000)
-desired_label = st.selectbox('Filter to:', ['car', 'truck'])
-st.write(data[data.label == desired_label])
+show(p)

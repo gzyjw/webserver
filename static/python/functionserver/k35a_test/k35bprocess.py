@@ -8,6 +8,8 @@ from jinja2 import Environment, PackageLoader
 from static.python.common import globaldata
 from xml.etree import ElementTree as ET
 import time
+import math
+
 
 envdata = globaldata.globel()
 envdata.server = ''                 #本服务器的地址
@@ -26,6 +28,9 @@ envdata.proctolserverinfo = None    #协议服务器的地址及端口号
 envdata.currentmechinedict = dict()
 envdata.webpageisready = False      #网页已准备好
 envdata.webpage = ''                #网页内容
+envdata.fontid = 1                  #字库序号
+envdata.timeproc = None
+envdata.funcproc = None
 
 envdata.receive_proclist = []           #接收到的命令系列
 envdata.pre_commandlist = []            #分解成功的待处理命令系列
@@ -34,8 +39,10 @@ envdata.waitresult_list = []            #等待返回结果系列
 
 envdata.databaselist = []       #支持的数据库服务器列表
 envdata.proctollist = []        #支持的协议服务器列表
+envdata.fontfilelist = []       #支持的字库列表
+envdata.progfilelist = []       #支持的固件列表
 
-OVERTIME = 10                    #最大等待超时时间
+OVERTIME = 5                    #最大等待超时时间
 OVERNUM = 3                     #最大重试次数
 TIME_DELAY = 0.2                #线程空闲时间
 
@@ -46,6 +53,17 @@ cmddirectdict = {
    CMDDIR_ASK:"CMDDIR_ASK",           \
    CMDDIR_REQUEST:"CMDDIR_REQUEST"
 }
+
+k35funclist = tuple([{"cmd_name":"CMD_LOGINON", "cmd_commit":"注册"},\
+                    {"cmd_name":"CMD_SENDTIMETO_MACHINE", "cmd_commit":"校时"},\
+                    {"cmd_name":"CMD_RESET_MACHINE", "cmd_commit":"复位"},\
+                    {"cmd_name":"CMD_REFRESH_KEY", "cmd_commit":"刷新钥匙"},\
+                    {"cmd_name":"CMD_OPEN_MECHINE", "cmd_commit":"开门"},\
+                    {"cmd_name":"CMD_UPDATE_FONT", "cmd_commit":"升级字库"},\
+                    {"cmd_name":"CMD_UPDATE_PROG", "cmd_commit":"升级固件"},\
+                    {"cmd_name":"CMD_GETKEYINFO", "cmd_commit":"读取钥匙信息"},\
+                    {"cmd_name":"CMD_ALLKEY_STATUS", "cmd_commit":"所有钥匙状态"}])
+
 
 def getserver(parameter):
     envdata.database = int(parameter.get('databaselist'))
@@ -66,14 +84,17 @@ def getserver(parameter):
 
 def proc_loginon(parameter):
     dataparmeter = dict(cmd="FUNC_LOGIN", machineid=parameter.get("machineid"))
+    tempparameter = dict()
     try:
         deviceid = envdata.databaseserver.databaseproc(dataparmeter)
     except (xmlrpc.client.Error, ConnectionRefusedError) as v:
         return("ERROR", v, "proc_loginon_get_deviceid")
-    parameter['cmd'] = 'REQUEST_LOGINON'
-    parameter['deviceid'] = deviceid
+    tempparameter['cmd'] = 'REQUEST_LOGINON'
+    tempparameter['deviceid'] = deviceid
+    tempparameter['machineid'] = parameter['machineid']
+    tempparameter['timestamp'] = parameter['timestamp']
     try:
-        deviceid = envdata.proctolserver.download_from_control(parameter)
+        deviceid = envdata.proctolserver.download_from_control(tempparameter)
     except (xmlrpc.client.Error, ConnectionRefusedError) as v:
         return("ERROR", v, "proc_loginon_request")
     return "SUCCESS"
@@ -332,6 +353,90 @@ def proc_heart(parameter):
                             container_page = templist[1]))
     return res
 
+def proc_allkey_status(parameter):
+    getserver(parameter)
+    res = ''
+    if (parameter.__contains__('MachineEquId')) :
+        machineid = parameter.get('MachineEquId')
+        tempdict = dict()
+        tempdict['cmd'] = 'ALLKEY_STATUS'
+        tempdict['machineid'] = machineid
+
+        try:
+            result = envdata.proctolserver.download_from_control(tempdict)
+            if result == 'SUCCESS':
+                res = 'SUCCESS'
+            elif result == 'LINKERROR':
+                res = 'LINKERROR'
+            else:
+                res = 'ERROR'
+        except (xmlrpc.client.Error, ConnectionRefusedError) as v:
+            res = 'ERROR'
+    else:
+        res = 'ERROR'
+    return res
+
+def proc_update_font(parameter):
+    getserver(parameter)
+    res = ''
+    if parameter.__contains__('MachineEquId') and (parameter.__contains__('fontfilelist')):
+        tempdict = dict()
+        tempdict['cmd'] = 'UPDATE_FONT'
+        tempdict['machineid'] = parameter.get('MachineEquId')
+        for fontfile in envdata.fontfilelist:
+            if fontfile.get("id") == parameter.get('fontfilelist'):
+                with open("../../../fontdir/" +fontfile.get("path"), "rb") as f:
+                    buff = f.read()
+                    tempbcc = 0
+                    for item in buff:
+                        tempbcc = tempbcc ^ item
+                    tempdict['fontdata'] = buff
+                    tempdict['fontbcc'] = tempbcc
+        try:
+            result = envdata.proctolserver.download_from_control(tempdict)
+            if result == 'SUCCESS':
+                res = 'SUCCESS'
+            elif result == 'LINKERROR':
+                res = 'LINKERROR'
+            else:
+                res = 'ERROR'
+        except (xmlrpc.client.Error, ConnectionRefusedError) as v:
+            res = 'ERROR'
+    else:
+        res = 'ERROR'
+    return res
+
+
+def proc_update_prog(parameter):
+    getserver(parameter)
+    res = ''
+    if parameter.__contains__('MachineEquId') and (parameter.__contains__('progfilelist')):
+        tempdict = dict()
+        tempdict['cmd'] = 'UPDATE_PROG'
+        tempdict['machineid'] = parameter.get('MachineEquId')
+        for progfile in envdata.progfilelist:
+            if progfile.get("id") == parameter.get('progfilelist'):
+                with open("../../../progdir/" +progfile.get("path"), "rb") as f:
+                    buff = f.read()
+                    tempbcc = 0
+                    for item in buff:
+                        tempbcc = tempbcc ^ item
+                    tempdict['progdata'] = buff
+                    tempdict['progbcc'] = tempbcc
+        try:
+            result = envdata.proctolserver.download_from_control(tempdict)
+            if result == 'SUCCESS':
+                res = 'SUCCESS'
+            elif result == 'LINKERROR':
+                res = 'LINKERROR'
+            else:
+                res = 'ERROR'
+        except (xmlrpc.client.Error, ConnectionRefusedError) as v:
+            res = 'ERROR'
+    else:
+        res = 'ERROR'
+    return res
+
 def proc_cmdmax(parameter):
     return parameter
 
@@ -343,6 +448,10 @@ commandentry = dict(CMD_LOGINON=proc_loginon,\
                     CMD_OPEN_MECHINE=proc_open_mechine,\
                     CMD_UNLOCK_ALLKEY=proc_unlock_allkey,\
                     CMD_HEART=proc_heart,\
+                    CMD_ALLKEY_STATUS=proc_allkey_status,\
+                    CMD_UPDATE_FONT=proc_update_font,\
+                    CMD_UPDATE_PROG=proc_update_prog,\
+
                     CMD_MAX=proc_cmdmax)
 
 
@@ -361,34 +470,36 @@ def proctolproc(parameter):
 
 
 def timerfunc():
-    if envdata.proctolserver is None or envdata.databaseserver is None:
-        pass
-    else:
-        try:
-            templist = envdata.proctolserver.upload_to_control()
-            if isinstance(templist, list) and templist:
-                for tempdict in templist:
-                    envdata.receive_proclist.append(tempdict)
-        except (xmlrpc.client.Error, ConnectionRefusedError) as v:
+    while True:
+        if envdata.proctolserver is None or envdata.databaseserver is None:
             pass
-        finally:
-            pass
-    t = threading.Timer(2, timerfunc)
-    t.start()
+        else:
+            try:
+                templist = envdata.proctolserver.upload_to_control()
+                if isinstance(templist, list) and templist:
+                    for tempdict in templist:
+                        envdata.receive_proclist.append(tempdict)
+            except (xmlrpc.client.Error, ConnectionRefusedError, BaseException) as v:
+                pass
+            finally:
+                pass
+        time.sleep(2)
+
 
 def funcproc():                          #将命令分解的分发函数
-    wait_result_proc()
-    run_cmd_proc()
-    pre_cmd_proc()
-    if len(envdata.receive_proclist) > 0:
-        for functionitem in envdata.receive_proclist:
-            if functionitem.get('function') == 'CMD_MAX':
-                pass
-            else:
-                envdata.pre_commandlist.append(functionitem)
-                envdata.receive_proclist.remove(functionitem)
-    t = threading.Timer(TIME_DELAY, funcproc)
-    t.start()
+    while True:
+        try:
+            wait_result_proc()
+            run_cmd_proc()
+            pre_cmd_proc()
+            if len(envdata.receive_proclist) > 0:
+                for functionitem in envdata.receive_proclist:
+                    if functionitem.get('function') in commandentry.keys():
+                        envdata.pre_commandlist.append(functionitem)
+                    envdata.receive_proclist.remove(functionitem)
+        except Exception:
+            pass
+        #time.sleep(0.01)
 
 def heartproc():
     if envdata.proctolserver is None:
@@ -401,52 +512,62 @@ def heartproc():
             pass
         else:
             function_x(tempcommand)
+    global t
     t = threading.Timer(12, heartproc)
     t.start()
 
 def pre_cmd_proc():
-    if len(envdata.pre_commandlist) > 0 and len(envdata.running_commandlist) == 0:
-        tempdict = envdata.pre_commandlist.pop(0)
-        tempdict["isrunned"] = False
-        tempdict["overprocess"]=OVERNUM
-        tempdict["overtime"]=time.time()+OVERTIME
-        envdata.running_commandlist.append(tempdict)
-    else:
+    try:
+        if len(envdata.pre_commandlist) > 0 and len(envdata.running_commandlist) == 0:
+            tempdict = envdata.pre_commandlist.pop(0)
+            tempdict["isrunned"] = False
+            tempdict["overprocess"]=OVERNUM
+            tempdict["overtime"]=time.time()+OVERTIME
+            envdata.running_commandlist.append(tempdict)
+        else:
+            pass
+    except Exception:
         pass
 
 def run_cmd_proc():
-    if len(envdata.running_commandlist) > 0:
-        for task in envdata.running_commandlist:
-            nowtime = time.time()
-            if nowtime > task.get("overtime"):
-                if task.get("overprocess") > 0:
-                    task["overprocess"] -= 1
-                    task["isrunned"] = False
-                    task["overtime"] += OVERTIME
-                else:
-                    envdata.running_commandlist.remove(task)
-            else:
-                if task.get("isrunned") == False:
-                    print(task.get('function'), "in running")
-                    result = proctolproc(task)
-                    if result == "SUCCESS":
-                        envdata.running_commandlist.remove(task)
-                        task["overtime"] = time.time() + OVERTIME
-                        envdata.waitresult_list.append(task)
-                        break
+    try:
+        if len(envdata.running_commandlist) > 0:
+            for task in envdata.running_commandlist:
+                nowtime = time.time()
+                if nowtime > task.get("overtime"):
+                    if task.get("overprocess") > 0:
+                        task["overprocess"] -= 1
+                        task["isrunned"] = False
+                        task["overtime"] += OVERTIME
                     else:
-                        task["isrunned"] = True
+                        print(task.get('function'), "del from running_commandlist")
+                        envdata.running_commandlist.remove(task)
+                else:
+                    if task.get("isrunned") == False:
+                        print(task.get('function'), "in running")
+                        result = proctolproc(task)
+                        if result == "SUCCESS":
+                            envdata.running_commandlist.remove(task)
+                            task["overtime"] = time.time() + OVERTIME
+                            envdata.waitresult_list.append(task)
+                            break
+                        else:
+                            task["isrunned"] = True
+    except Exception:
+        pass
 
 def wait_result_proc():
-    if len(envdata.waitresult_list) >0:
-        for task in envdata.waitresult_list:
-            if time.time() > task["overtime"]:
-                print("del task", task['function'])
-                envdata.waitresult_list.remove(task)
+    try:
+        if len(envdata.waitresult_list) >0:
+            for task in envdata.waitresult_list:
+                if time.time() > task["overtime"]:
+                    print("del task", task['function'])
+                    envdata.waitresult_list.remove(task)
+    except Exception:
+        pass
 
 def setup():
     tempdict = dict()
-    tempdict["functiontype"] = "k35a"
     tempdict["index"] = dict(databaselist = "支持的数据库", proctollist = "支持的协议")
     tempdict["databaselist"] = envdata.databaselist
     tempdict["proctollist"] = envdata.proctollist
@@ -502,7 +623,6 @@ def proc_web_OTHER(parameter):
     pass
 
 def begin(dict_data):
-    templist = []
     envdata.database = int(dict_data.get('databaselist'))
     envdata.proctol = int(dict_data.get('proctollist'))
     for database in envdata.databaselist:
@@ -524,25 +644,27 @@ def begin(dict_data):
         dict_data["MachineEquId"] = machinelist["MachineEquId"]
     except (xmlrpc.client.Error, ConnectionRefusedError) as v:
         tempfuncstr = "error no database has!!!"
-    templist.append({"cmd_name":"CMD_LOGINON", "cmd_commit":"注册"})
-    templist.append({"cmd_name":"CMD_SENDTIMETO_MACHINE", "cmd_commit":"校时"})
-    templist.append({"cmd_name":"CMD_RESET_MACHINE", "cmd_commit":"复位"})
-    templist.append({"cmd_name":"CMD_REFRESH_KEY", "cmd_commit":"刷新钥匙"})
-    templist.append({"cmd_name":"CMD_OPEN_MECHINE", "cmd_commit":"开门"})
-    dict_data["functionlist"] = templist
+
+    dict_data["viewstage"] = "respecnce"
+    dict_data["functionlist"] = k35funclist
     return dict_data
 
 def function_x(dict_data):
+    getserver(dict_data)
     if dict_data.__contains__('function'):
         dict_data["timestamp"] = time.time()
         envdata.receive_proclist.append(dict_data)
-        for i in range(10):
-            time.sleep(1)
-            if(envdata.webpageisready):
-                envdata.webpageisready = False
-                return envdata.webpage
+        dict_data["returnresult"] = "commandissend"
+        dict_data["viewstage"] = "after"+dict_data["function"]
     else:
-        return "<h1> ERROR COMMAND </h1>"
+        dict_data["returnresult"] = "commandnot"
+        dict_data["viewstage"] = "respecnce"
+    dict_data["functionlist"] = k35funclist
+    return dict_data
+
+def returnstatus(dict_data):
+    tempdict = dict(result="success", parameter="gzyjw")
+    return tempdict
 
 def beginrpc():
     with SimpleXMLRPCServer((envdata.server, envdata.port)) as server:
@@ -551,6 +673,7 @@ def beginrpc():
         #server.register_function(function, 'function')
         server.register_function(function_x, 'function')
         server.register_function(begin, 'begin')
+        server.register_function(returnstatus)
         #server.register_instance(service, allow_dotted_names=True)
         server.register_multicall_functions()
         print('Serving XML-RPC on localhost port 20001')
@@ -570,7 +693,11 @@ def init_data():
             envdata.databaselist.append(subitem.attrib)
         for subitem in item.iter('PROCTOL'):
             envdata.proctollist.append(subitem.attrib)
-    funcproc()
+        for subitem in item.iter('FONTFILE'):
+            envdata.fontfilelist.append(subitem.attrib)
+        for subitem in item.iter('PROGFILE'):
+            envdata.progfilelist.append(subitem.attrib)
+    #funcproc()
     heartproc()
 
 
@@ -579,13 +706,30 @@ def init_server():
     envdata.databaseserver = xmlrpc.client.ServerProxy(rpcserver)
     rpcserver = "http://%s:%s" % ("127.0.0.1", 30001)
     envdata.proctolserver = xmlrpc.client.ServerProxy(rpcserver)
-
-
+'''
+def checkprocess():
+    while True:
+        if envdata.funcproc._is_stopped:
+            print('funcproc is stopped')
+            envdata.funcproc._stop()
+            envdata.funcproc.start()
+        if envdata.timeproc._is_stopped:
+            print("timeproc is stopped")
+        time.sleep(1)
+'''
 
 def main():
     init_data()
     init_server()
-    timerfunc()
+    envdata.timeproc = threading.Thread(target=timerfunc)
+    envdata.timeproc.setDaemon(True)
+    envdata.timeproc.start()
+    envdata.funcproc = threading.Thread(target=funcproc)
+    envdata.funcproc.setDaemon(True)
+    envdata.funcproc.start()
+    #p = threading.Thread(target=checkprocess)
+    #p.setDaemon(True)
+    #p.start()
     beginrpc()
 
 if __name__ == "__main__":

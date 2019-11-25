@@ -28,7 +28,12 @@
                 var width = window.innerWidth;
                 var height = window.innerHeight;
                 autoresize(width, height);
+                setInterval(function(){
+                    return
+                },1000);
+                {{ scriptstrhead }}
             });
+            {{ scriptstrbody }}
             function autoresize(width, height)
             {
                 if (width > height) {

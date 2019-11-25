@@ -11,4 +11,12 @@
         <PROCTOL id="3" name="TCP T钥通主站与子站通讯规约" commit="TCP T钥通主站与子站通讯规约" server="127.0.0.1" port="30001" ></PROCTOL>
         <PROCTOL id="4" name="UDP U钥通主站与子站通讯规约" commit="UDP U钥通主站与子站通讯规约" server="127.0.0.1" port="30001" ></PROCTOL>
     </PROCTOLLIST>
+    <FONTFILELIST>
+        <FONTFILE  id="1" path="gbk_16X16_org.bin" ver="v1.0" commit="GBK字库"></FONTFILE>
+        <FONTFILE  id="2" path="gbk_16X16_asc_h.bin" ver="v1.1" commit="GBK字库ASC是半角字符"></FONTFILE>
+    </FONTFILELIST>
+    <PROGRAMFILELIST>
+        <PROGFILE  id="1" path="k35_app_v1.6_for_liaoguang.bin" ver="v1.6" commit="为老管开发的版本"></PROGFILE>
+        <PROGFILE  id="2" path="k35_app_v1.4_for_test.bin" ver="v1.4" commit="软件事业部开发的用于云南的版本"></PROGFILE>
+    </PROGRAMFILELIST>
 </FUNCTION>
