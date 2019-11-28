@@ -10,6 +10,8 @@ paranamelist = tuple(["functionPort",\
                      "MachineEquId",\
                      "viewstage"])
 
+
+
 def makecommandlist(dict):
     tempstr = '<div id="left"><p class="funcselect">功能选择</p>'
     templist = dict["functionlist"]
@@ -32,8 +34,14 @@ def makecommandlist(dict):
     tempstr = tempstr + "</div>"
     return tempstr
 
+def makecontent(dict):
+    tempstr = '<div id="right"><p class="funcselect">fdsadfasdfa</p></div>'
+    return tempstr
+
 def beginview(dict):
-    tempstr = makecommandlist(dict)
+    tempstr = ""
+    tempstr += makecommandlist(dict)
+    tempstr += makecontent(dict)
     scriptstr = ""
     tempstr = list([tempstr, "", scriptstr, ""])
     return tempstr

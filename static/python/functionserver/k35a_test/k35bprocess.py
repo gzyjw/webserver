@@ -11,6 +11,7 @@ import time
 import math
 
 
+
 envdata = globaldata.globel()
 envdata.server = ''                 #本服务器的地址
 envdata.port = 0                    #本服务器的端口号
@@ -25,12 +26,17 @@ envdata.proctol = 0                 #协议服务器序号
 envdata.proctolname = ''            #协议服务器名称
 envdata.proctolserver = None        #协议服务器
 envdata.proctolserverinfo = None    #协议服务器的地址及端口号
+envdata.display = 0                 #显示服务器序号
+envdata.displayname = ''            #显示服务器名称
+envdata.displayserver = None        #显示服务器
+envdata.displayserverinfo = None    #显示服务器的地址及端口号
 envdata.currentmechinedict = dict()
 envdata.webpageisready = False      #网页已准备好
 envdata.webpage = ''                #网页内容
 envdata.fontid = 1                  #字库序号
 envdata.timeproc = None
 envdata.funcproc = None
+envdata.needflash = dict({"needfresh":False, "freshtime":0})           #不用刷新页面
 
 envdata.receive_proclist = []           #接收到的命令系列
 envdata.pre_commandlist = []            #分解成功的待处理命令系列
@@ -39,6 +45,7 @@ envdata.waitresult_list = []            #等待返回结果系列
 
 envdata.databaselist = []       #支持的数据库服务器列表
 envdata.proctollist = []        #支持的协议服务器列表
+envdata.displaylist = []        #支持的显示服务器列表
 envdata.fontfilelist = []       #支持的字库列表
 envdata.progfilelist = []       #支持的固件列表
 
@@ -81,6 +88,12 @@ def getserver(parameter):
             envdata.proctolserverinfo = (proctol.get("server"), int(proctol.get("port")))
             rpcserver = "http://%s:%s" % envdata.proctolserverinfo
             envdata.proctolserver = xmlrpc.client.ServerProxy(rpcserver)
+    for display in envdata.displaylist:
+        if display.get("id") == parameter.get('displaylist'):
+            envdata.displayname = display.get("name")
+            envdata.displayserverinfo = (display.get("server"), int(display.get("port")))
+            rpcserver = "http://%s:%s" % envdata.displayserverinfo
+            envdata.displayserver = xmlrpc.client.ServerProxy(rpcserver)
 
 def proc_loginon(parameter):
     dataparmeter = dict(cmd="FUNC_LOGIN", machineid=parameter.get("machineid"))
@@ -497,6 +510,9 @@ def funcproc():                          #将命令分解的分发函数
                     if functionitem.get('function') in commandentry.keys():
                         envdata.pre_commandlist.append(functionitem)
                     envdata.receive_proclist.remove(functionitem)
+            temptime = time.time()
+            if temptime > envdata.needflash.get("freshtime"):
+                envdata.needflash["freshtime"] = temptime + 2
         except Exception:
             pass
         #time.sleep(0.01)
@@ -568,76 +584,24 @@ def wait_result_proc():
 
 def setup():
     tempdict = dict()
-    tempdict["index"] = dict(databaselist = "支持的数据库", proctollist = "支持的协议")
+    tempdict["index"] = dict(databaselist = "支持的数据库", proctollist = "支持的协议", displaylist = "支持的显示界面")
     tempdict["databaselist"] = envdata.databaselist
     tempdict["proctollist"] = envdata.proctollist
+    tempdict["displaylist"] = envdata.displaylist
     return tempdict
 
 def initial(dict_data):
-    envdata.database = int(dict_data.get('databaselist'))
-    envdata.proctol = int(dict_data.get('proctollist'))
-    for database in envdata.databaselist:
-        if database.get("id") == dict_data.get('databaselist'):
-            envdata.databasename = database.get("name")
-            envdata.databasecommit = database.get("commit")
-            envdata.databaseserverinfo = (database.get("server"), int(database.get("port")))
-            rpcserver = "http://%s:%s" % envdata.databaseserverinfo
-            envdata.databaseserver = xmlrpc.client.ServerProxy(rpcserver)
-    for proctol in envdata.proctollist:
-        if proctol.get("id") == dict_data.get('proctollist'):
-            envdata.proctolname = proctol.get("name")
-            envdata.proctolserverinfo = (proctol.get("server"), int(proctol.get("port")))
-            rpcserver = "http://%s:%s" % envdata.proctolserverinfo
-            envdata.proctolserver = xmlrpc.client.ServerProxy(rpcserver)
-    dataparmeter = dict(cmd="FUNC_GET_ALLMACHINE")
-    try:
-        machinelist = envdata.databaseserver.databaseproc(dataparmeter)
-        tempdict = dict()
-        onlinelist = []
-        offlinelist = []
-        for item in machinelist:
-            if item.__contains__("IsStop"):
-                if item.get('IsStop') == 0:
-                    tempitem=dict()
-                    tempitem['id'] = item["MachineId"]
-                    tempitem['commit'] = item["MachineName"]
-                    onlinelist.append(tempitem)
-                else:
-                    tempitem=dict()
-                    tempitem['id'] = item["MachineId"]
-                    tempitem['commit'] = item["MachineName"]
-                    offlinelist.append(tempitem)
-            else:
-                tempitem=dict()
-                tempitem['id'] = item["MachineId"]
-                tempitem['commit'] = item["MachineName"]
-                offlinelist.append(tempitem)
-        tempdict["index"] = dict(onlinelist = "在线设备", offlinelist = "不在线设备")
-        tempdict["onlinelist"] = onlinelist
-        tempdict["offlinelist"] = offlinelist
-        return tempdict
-    except (xmlrpc.client.Error, ConnectionRefusedError) as v:
-        tempfuncstr = "error no database has!!!"
+    tempstr = "/running.html?"
+    for k,v in dict_data.items():
+        tempstr += '%s=%s&'%(k, v)
+    tempstr += 'function=CMD_DISPLAYINITIAL&timestamp=%s'%time.time()
+    return tempstr
 
 def proc_web_OTHER(parameter):
     pass
 
 def begin(dict_data):
-    envdata.database = int(dict_data.get('databaselist'))
-    envdata.proctol = int(dict_data.get('proctollist'))
-    for database in envdata.databaselist:
-        if database.get("id") == dict_data.get('databaselist'):
-            envdata.databasename = database.get("name")
-            envdata.databasecommit = database.get("commit")
-            envdata.databaseserverinfo = (database.get("server"), int(database.get("port")))
-            rpcserver = "http://%s:%s" % envdata.databaseserverinfo
-            envdata.databaseserver = xmlrpc.client.ServerProxy(rpcserver)
-    for proctol in envdata.proctollist:
-        if proctol.get("id") == dict_data.get('proctollist'):
-            envdata.proctolname = proctol.get("name")
-            envdata.proctolserverinfo = (proctol.get("server"), int(proctol.get("port")))
-            rpcserver = "http://%s:%s" % envdata.proctolserverinfo
-            envdata.proctolserver = xmlrpc.client.ServerProxy(rpcserver)
+    getserver(dict_data)
     dataparmeter = dict(cmd="FUNC_GETMECHINEINFO", machineid=dict_data["machineid"])
     try:
         machinelist = envdata.databaseserver.databaseproc(dataparmeter)
@@ -652,13 +616,23 @@ def begin(dict_data):
 def function_x(dict_data):
     getserver(dict_data)
     if dict_data.__contains__('function'):
-        dict_data["timestamp"] = time.time()
-        envdata.receive_proclist.append(dict_data)
-        dict_data["returnresult"] = "commandissend"
-        dict_data["viewstage"] = "after"+dict_data["function"]
+        if dict_data["function"] == "CMD_DISPLAYINITIAL":
+            templist = envdata.displayserver.initial(dict_data)
+            tempdict = dict()
+            tempdict["returnresult"] = "freshpage"
+            tempdict["data"] = templist
+            return tempdict
+        elif dict_data["function"] == "CMD_FRESHDISPLAY":
+            templist = []
+            tempdict = dict()
+            tempdict["returnresult"] = "donotchange"
+            tempdict["data"] = templist
+            return tempdict
+        else:
+            envdata.receive_proclist.append(dict_data)
+            dict_data["returnresult"] = "commandissend"
     else:
         dict_data["returnresult"] = "commandnot"
-        dict_data["viewstage"] = "respecnce"
     dict_data["functionlist"] = k35funclist
     return dict_data
 
@@ -693,11 +667,12 @@ def init_data():
             envdata.databaselist.append(subitem.attrib)
         for subitem in item.iter('PROCTOL'):
             envdata.proctollist.append(subitem.attrib)
+        for subitem in item.iter('DISPLAY'):
+            envdata.displaylist.append(subitem.attrib)
         for subitem in item.iter('FONTFILE'):
             envdata.fontfilelist.append(subitem.attrib)
         for subitem in item.iter('PROGFILE'):
             envdata.progfilelist.append(subitem.attrib)
-    #funcproc()
     heartproc()
 
 
@@ -706,6 +681,8 @@ def init_server():
     envdata.databaseserver = xmlrpc.client.ServerProxy(rpcserver)
     rpcserver = "http://%s:%s" % ("127.0.0.1", 30001)
     envdata.proctolserver = xmlrpc.client.ServerProxy(rpcserver)
+    rpcserver = "http://%s:%s" % ("127.0.0.1", 50001)
+    envdata.displayserver = xmlrpc.client.ServerProxy(rpcserver)
 '''
 def checkprocess():
     while True:
